@@ -3,6 +3,17 @@ import re
 
 
 def download(name: str, url: str, start: re.Pattern, end: re.Pattern):
+    """Downloads a file and adds it to the database
+
+    Args:
+        name (str): file save name
+        url (str): download from where?
+        start (re.Pattern): Start string of save
+        end (re.Pattern): Post-string of save
+
+    Raises:
+        requests.RequestException: Raised on failure to download the file
+    """
     response = requests.get(url, timeout=1)
     if response.status_code != 200:
         raise requests.RequestException(
@@ -12,7 +23,7 @@ def download(name: str, url: str, start: re.Pattern, end: re.Pattern):
     text = re.split(start, text, 1)[1]
     text = re.split(end, text, 1)[0]
     text = text.strip()
-    with open(f"{name}.txt", "w", encoding="utf-8") as f:
+    with open(f"database/{name}.txt", "w", encoding="utf-8") as f:
         f.write(text)
 
 
@@ -36,8 +47,8 @@ downloads = {
         "https://www.gutenberg.org/cache/epub/5400/pg5400.txt",
         re.compile(r"CHAPTER I"),
         re.compile(r"\*\*\* END OF THE PROJECT GUTENBERG"),
-    )
+    ),
 }
 
-for name, data in downloads.items():
-    download(name, data[0], data[1], data[2])
+for author, data in downloads.items():
+    download(author, data[0], data[1], data[2])

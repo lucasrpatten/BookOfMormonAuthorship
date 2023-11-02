@@ -161,6 +161,8 @@ cython_debug/
 
 
 
-# Ignore all files in the database folder except download_data.py
+# Ignore database
 /database/*
-!/database/download_data.py
+
+
+.vscode/
