@@ -1,8 +1,6 @@
 import os
 import random
-from re import split
-import torch
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, random_split
 
 
 class AuthorshipPairDataset(Dataset):
@@ -90,3 +88,5 @@ def generate_dataset(
     train_ds, test_ds = random_split(ds, [train_size, test_size])
 
     return train_ds, test_ds
+
+generate_dataset()
