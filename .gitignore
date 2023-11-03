@@ -163,6 +163,8 @@ cython_debug/
 
 # Ignore database
 */database/
+test_ds.pkl
+train_ds.pkl
 
 
 .vscode/

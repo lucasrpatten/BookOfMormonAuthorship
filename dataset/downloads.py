@@ -1,3 +1,4 @@
+""" Contains downloads dict with information for database downloads """
 import re
 
 downloads: dict[str, tuple[str, re.Pattern, re.Pattern]] = {

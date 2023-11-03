@@ -2,12 +2,21 @@ import os
 import random
 import re
 import pickle
+from threading import local
 import requests
 from dataset.downloads import downloads
 from torch.utils.data import Dataset, random_split
 
 
 class AuthorshipPairDataset(Dataset):
+    """Authorship Pair Dataset
+
+    Args:
+        text_data1 (list[str]): OG Author Texts
+        text_data2 (list[str]): Unknown Author Text
+        labels (list[int]): Same or Different Booleans (1 or 0)
+    """
+
     def __init__(
         self, text_data1: list[str], text_data2: list[str], labels: list[int]
     ) -> None:
@@ -56,11 +65,7 @@ def download_file(name: str, url: str, start: re.Pattern, end: re.Pattern):
         f.write(text)
 
 
-def download_dataset():
-    for author, data in downloads.items():
-        download_file(author, data[0], data[1], data[2])
-
-
+# pylint: disable=too-many-locals
 def generate_dataset(
     size: int = 10000, train_split: float = 0.8, seed: int = 42
 ) -> tuple[Dataset, Dataset]:
@@ -97,28 +102,31 @@ def generate_dataset(
             text2_len = random.randint(480, 4090)
             text2 = " ".join(space_split[split_start_2 : split_start_2 + text2_len])
             return text1, text2, 1
-        else:
-            file1, file2 = random.sample(files, 2)
-            with open(file1, "r", encoding="utf-8") as f:
-                space_split1 = f.read().split()
-            split_start_1 = random.randint(0, len(space_split1) - 4096)
-            text1_len = random.randint(480, 4090)
-            text1 = " ".join(space_split1[split_start_1 : split_start_1 + text1_len])
-            with open(file2, "r", encoding="utf-8") as f:
-                space_split2 = f.read().split()
-            split_start_2 = random.randint(0, len(space_split2) - 4096)
-            text2_len = random.randint(480, 4090)
-            text2 = " ".join(space_split2[split_start_2 : split_start_2 + text2_len])
-            return text1, text2, 0
+        file1, file2 = random.sample(files, 2)
+        with open(file1, "r", encoding="utf-8") as f:
+            space_split1 = f.read().split()
+        split_start_1 = random.randint(0, len(space_split1) - 4096)
+        text1_len = random.randint(480, 4090)
+        text1 = " ".join(space_split1[split_start_1 : split_start_1 + text1_len])
+        with open(file2, "r", encoding="utf-8") as f:
+            space_split2 = f.read().split()
+        split_start_2 = random.randint(0, len(space_split2) - 4096)
+        text2_len = random.randint(480, 4090)
+        text2 = " ".join(space_split2[split_start_2 : split_start_2 + text2_len])
+        return text1, text2, 0
 
-    text_data1 = []
-    text_data2 = []
-    labels = []
-    for _ in range(size):
-        text1, text2, label = __generate_pair()
-        text_data1.append(text1)
-        text_data2.append(text2)
-        labels.append(label)
+    pairs = [__generate_pair() for _ in range(size)]
+    text_data1, text_data2, labels = zip(*pairs)
+
+    # text_data1 = []
+    # text_data2 = []
+    # labels = []
+
+    # for _ in range(size):
+    #     text1, text2, label = __generate_pair()
+    #     text_data1.append(text1)
+    #     text_data2.append(text2)
+    #     labels.append(label)
 
     ds = AuthorshipPairDataset(text_data1, text_data2, labels)
     train_size = int(train_split * len(ds))
@@ -133,4 +141,38 @@ def generate_dataset(
     return train_ds, test_ds
 
 
-download_dataset()
+def get_data(
+    size: int = 10000, train_split: float = 0.8, seed: int = 42
+) -> tuple[Dataset, Dataset]:
+    """Returns training and testing datasets, and updates database if necessary
+
+    Args:
+        size (int, optional): Dataset Size. Defaults to 10000.
+        train_split (float, optional): Train Test Split. Defaults to 0.8.
+        seed (int, optional): Dataset Generation Seed. Defaults to 42.
+
+    Returns:
+        tuple[Dataset, Dataset]: (training dataset, testing dataset)
+    """
+    local_path = os.path.dirname(os.path.abspath(__file__))
+    # Check dataset dir for dataset pkl files, return them if they exist
+    train_ds_path = os.path.join(local_path, "train_ds.pkl")
+    test_ds_path = os.path.join(local_path, "test_ds.pkl")
+    if os.path.exists(train_ds_path) and os.path.exists(test_ds_path):
+        with open(train_ds_path, "rb") as f:
+            train_ds = pickle.load(f)
+        with open(test_ds_path, "rb") as f:
+            test_ds = pickle.load(f)
+        return train_ds, test_ds
+
+    # Update Database
+    db_dir = os.path.join(local_path, "database")
+    for author, data in downloads.items():
+        if not os.path.exists(os.path.join(db_dir, f"{author}.txt")):
+            download_file(author, data[0], data[1], data[2])
+
+    # Return new datasets
+    return generate_dataset(size, train_split, seed)
+
+
+get_data(100, 0.9)
