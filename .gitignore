@@ -162,7 +162,7 @@ cython_debug/
 
 
 # Ignore database
-/database/*
+*/database/
 
 
 .vscode/

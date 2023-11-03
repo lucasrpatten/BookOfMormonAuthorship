@@ -6,8 +6,7 @@ from transformers import RobertaTokenizer, RobertaModel
 
 class BaseAuthorshipModel(nn.Module, ABC):
     def __init__(self, similarity_threshold: float = 3.0, roberta_model: str = "roberta-large-mnli"):
-        super(ABC, self).__init__()
-        super(nn.Module, self).__init__()
+        super().__init__()
         self.roberta = RobertaModel.from_pretrained(roberta_model)
         self.tokenizer = RobertaTokenizer.from_pretrained(roberta_model)
         self.similarity_threshold = similarity_threshold
@@ -55,14 +54,14 @@ class BaseAuthorshipModel(nn.Module, ABC):
         average_embedding = embeddings_sum / segment_count
         return average_embedding
 
-    def forward(self, inputs: tuple[str, str], max_length: int = 512):
+    def forward(self, inputs: tuple[str, str]):
         text1, text2 = inputs
         author1_embed = self.get_author1_embedding(text1)
         author2_embed = self.get_avg_cls_embedding(text2)
         author1_processed = self.sequential(author1_embed)
         author2_processed = self.sequential(author2_embed)
         cos_similarity = torch.cosine_similarity(author1_processed, author2_processed, dim=1)
-        if cos_similarity =< self.cos_similarity:
+        if cos_similarity <= self.cos_similarity:
             return 1
         else:
             return 0
@@ -72,8 +71,8 @@ class BaseAuthorshipModel(nn.Module, ABC):
         pass
 
 class ProductionAuthorshipModel(BaseAuthorshipModel):
-    def __init__(self, author1_embedding: torch.Tensor, roberta_model: str = "roberta-large-mnli"):
-        super().__init__(roberta_model)
+    def __init__(self, author1_embedding: torch.Tensor, similarity_threshold: float = 3.0, roberta_model: str = "roberta-large-mnli"):
+        super().__init__(similarity_threshold=similarity_threshold, roberta_model=roberta_model)
         self._author1_embedding = author1_embedding
 
     def get_author1_embedding(self, _):
@@ -82,7 +81,8 @@ class ProductionAuthorshipModel(BaseAuthorshipModel):
 
 class TrainingAuthorshipModel(BaseAuthorshipModel):
     def __init__(self, similarity_threshold: float = 3.0, roberta_model: str = "roberta-large-mnli"):
-        super().__init__(roberta_model)
+        super().__init__(similarity_threshold=similarity_threshold, roberta_model=roberta_model)
+        self.similarity_threshold = similarity_threshold
 
     def get_author1_embedding(self, text: str) -> torch.Tensor:
         return self.get_avg_cls_embedding(text)

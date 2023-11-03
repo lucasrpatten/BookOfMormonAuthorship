@@ -1,5 +1,9 @@
 import os
 import random
+import re
+import pickle
+import requests
+from dataset.downloads import downloads
 from torch.utils.data import Dataset, random_split
 
 
@@ -22,6 +26,41 @@ class AuthorshipPairDataset(Dataset):
         return (text1, text2, label)
 
 
+def download_file(name: str, url: str, start: re.Pattern, end: re.Pattern):
+    """Downloads a file and adds it to the database
+
+    Args:
+        name (str): file save name
+        url (str): download from where?
+        start (re.Pattern): Start string of save
+        end (re.Pattern): Post-string of save
+
+    Raises:
+        requests.RequestException: Raised on failure to download the file
+    """
+    response = requests.get(url, timeout=1)
+    if response.status_code != 200:
+        raise requests.RequestException(
+            f"Failed to download file from {url} with status code {response.status_code}"
+        )
+    text = response.content.decode("utf-8")
+    text = re.split(start, text, 1)[1]
+    text = re.split(end, text, 1)[0]
+    text = text.strip()
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    database_path = os.path.join(script_dir, "database")
+    if not os.path.exists(database_path):
+        os.makedirs(database_path)
+    file_path = os.path.join(database_path, f"{name}.txt")
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(text)
+
+
+def download_dataset():
+    for author, data in downloads.items():
+        download_file(author, data[0], data[1], data[2])
+
+
 def generate_dataset(
     size: int = 10000, train_split: float = 0.8, seed: int = 42
 ) -> tuple[Dataset, Dataset]:
@@ -36,7 +75,7 @@ def generate_dataset(
         tuple[Dataset, Dataset]: Training Dataset, Testing Dataset
     """
     random.seed(seed)
-    database_dir = "./database"
+    database_dir = "./dataset/database"
 
     # Get all data files
     files = [
@@ -86,7 +125,12 @@ def generate_dataset(
     test_size = len(ds) - train_size
 
     train_ds, test_ds = random_split(ds, [train_size, test_size])
-
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(script_dir, "train_ds.pkl"), "wb") as f:
+        pickle.dump(train_ds, f)
+    with open(os.path.join(script_dir, "test_ds.pkl"), "wb") as f:
+        pickle.dump(test_ds, f)
     return train_ds, test_ds
 
-generate_dataset()
+
+download_dataset()
