@@ -2,10 +2,11 @@ import os
 import random
 import re
 import pickle
-from threading import local
 import requests
+import torch
 from dataset.downloads import downloads
 from torch.utils.data import Dataset, random_split
+from transformers import RobertaTokenizer
 
 
 class AuthorshipPairDataset(Dataset):
@@ -18,7 +19,10 @@ class AuthorshipPairDataset(Dataset):
     """
 
     def __init__(
-        self, text_data1: list[str], text_data2: list[str], labels: list[int]
+        self,
+        text_data1: list[str],
+        text_data2: list[str],
+        labels: list[int],
     ) -> None:
         self.text_data1 = text_data1
         self.text_data2 = text_data2
@@ -27,12 +31,28 @@ class AuthorshipPairDataset(Dataset):
     def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, idx: int) -> tuple[str, str, int]:
+    def __getitem__(self, idx: int):
+        tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
+        max_length = 512
         text1 = self.text_data1[idx]
         text2 = self.text_data2[idx]
-        label = self.labels[idx]
+        inputs1 = tokenizer(
+            text1,
+            padding="max_length",
+            max_length=max_length,
+            return_tensors="pt",
+            truncation=True,
+        )
+        inputs2 = tokenizer(
+            text2,
+            padding="max_length",
+            max_length=max_length,
+            return_tensors="pt",
+            truncation=True,
+        )
+        label = torch.tensor(self.labels[idx])
 
-        return (text1, text2, label)
+        return inputs1, inputs2, label
 
 
 def download_file(name: str, url: str, start: re.Pattern, end: re.Pattern):
@@ -128,7 +148,11 @@ def generate_dataset(
     #     text_data2.append(text2)
     #     labels.append(label)
 
-    ds = AuthorshipPairDataset(text_data1, text_data2, labels)
+    ds = AuthorshipPairDataset(
+        text_data1,
+        text_data2,
+        labels
+    )
     train_size = int(train_split * len(ds))
     test_size = len(ds) - train_size
 
@@ -173,6 +197,3 @@ def get_data(
 
     # Return new datasets
     return generate_dataset(size, train_split, seed)
-
-
-get_data(100, 0.9)
