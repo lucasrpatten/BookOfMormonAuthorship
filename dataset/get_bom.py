@@ -1,5 +1,12 @@
+import enum
 import requests
 import re
+import os
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+database_path = os.path.join(script_dir, "bom")
+if not os.path.exists(database_path):
+    os.makedirs(database_path)
 
 
 def fetch_bom():
@@ -18,12 +25,52 @@ def fetch_bom():
     ]
     return text
 
-def parse_book(book_text: str, book_name: str):
+
+def parse_chapter(chapter_text: str):
+    verse_numbers = re.compile(r"\d+:\d+ ")
+    return [
+        re.sub(r"\n+", "", i.strip())
+        for i in re.split(verse_numbers, chapter_text)
+        if i.strip() != ""
+    ]
+
+
+def parse_book(book_text: str, book_name: str, single: bool = False):
+    book_dir = os.path.join(database_path, book_name)
+    if not os.path.exists(book_dir):
+        os.makedirs(book_dir)
+
+    if book_name == "Heleman":
+        book_name = ""
+    if single:
+        chapter_dir = os.path.join(book_dir, "1")
+        if not os.path.exists(chapter_dir):
+            os.makedirs(chapter_dir)
+        verses = parse_chapter(book_text.strip())
+        for j, verse in enumerate(verses):
+            verse_path = os.path.join(chapter_dir, f"{j+1}.txt")
+            with open(verse_path, "w", encoding="utf-8") as f:
+                f.write(verse.strip().replace("\r", " "))
+        return
     chapters = re.split(f"{book_name} Chapter \d+", book_text)
     if chapters[0].strip() != "":
-        print(chapters[0])
-        chapters = chapters[1:]
-    return chapters
+        intro = chapters[0]
+        intro_path = os.path.join(book_dir, "intro.txt")
+        with open(intro_path, "w", encoding="utf-8") as f:
+            f.write(re.sub(r"\r\n", " ", intro.strip()))
+    chapters = chapters[1:]
+    for i, chapter in enumerate(chapters):
+        chapter_dir = os.path.join(book_dir, str(i + 1))
+        if not os.path.exists(chapter_dir):
+            os.makedirs(chapter_dir)
+        verses = parse_chapter(chapter)
+        for j, verse in enumerate(verses):
+            verse_path = os.path.join(chapter_dir, f"{j+1}.txt")
+            with open(verse_path, "w", encoding="utf-8") as f:
+                f.write(verse.strip().replace("\r", " "))
+    return
+
+
 def parse_books(bom_text: str):
     bom_text = bom_text.split(
         "THE FIRST BOOK OF NEPHI HIS REIGN AND MINISTRY (1 Nephi)"
@@ -47,7 +94,7 @@ def parse_books(bom_text: str):
         maxsplit=1,
     )
     nephi3, bom_text = re.split(
-        r"FOURTH NEPHI\s+WHO IS THE SON OF NEPHI—ONE OF THE DISCIPLES OF JESUS CHRIST",
+        r"FOURTH NEPHI\s+WHO IS THE SON OF NEPHI—ONE OF THE DISCIPLES OF JESUS CHRIST\s+An account of the people of Nephi, according to his record.",
         bom_text,
         maxsplit=1,
     )
@@ -57,7 +104,22 @@ def parse_books(bom_text: str):
 
     del bom_text
 
-    parse_book(nephi1., "1 Nephi")
+    parse_book(nephi1, "1 Nephi")
+    parse_book(nephi2, "2 Nephi")
+    parse_book(jacob, "Jacob")
+    parse_book(enos, "Enos", single=True)
+    parse_book(jarom, "Jarom", single=True)
+    parse_book(omni, "Omni", single=True)
+    parse_book(words_of_mormon, "Words of Mormon", single=True)
+    parse_book(mosiah, "Mosiah")
+    parse_book(alma, "Alma")
+    parse_book(heleman, "Heleman")
+    parse_book(nephi3, "3 Nephi")
+    parse_book(nephi4, "4 Nephi", single=True)
+    parse_book(mormon, "Mormon")
+    parse_book(ether, "Ether")
+    parse_book(moroni, "Moroni")
+
     verse_numbers = re.compile(r"\n\d+:\d+ ")
     books = r"([1-4] Nephi|Jacob|Enos|Jarom|Omni|Mormon|Mosiah|Alma|Heleman|Mormon|Ether|Moroni)"
 
