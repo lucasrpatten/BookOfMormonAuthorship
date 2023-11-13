@@ -1,4 +1,3 @@
-import enum
 import requests
 import re
 import os
@@ -119,9 +118,6 @@ def parse_books(bom_text: str):
     parse_book(mormon, "Mormon")
     parse_book(ether, "Ether")
     parse_book(moroni, "Moroni")
-
-    verse_numbers = re.compile(r"\n\d+:\d+ ")
-    books = r"([1-4] Nephi|Jacob|Enos|Jarom|Omni|Mormon|Mosiah|Alma|Heleman|Mormon|Ether|Moroni)"
 
 
 parse_books(fetch_bom())

@@ -1,25 +1,31 @@
 """ Contains downloads dict with information for database downloads """
-import re
 
-downloads: dict[str, tuple[str, re.Pattern, re.Pattern]] = {
+END_OF_GUTENBERG = "*** END OF THE PROJECT GUTENBERG"
+
+downloads: dict[str, tuple[str, str, str]] = {
     "shakespeare": (
         "https://gutenberg.org/cache/epub/100/pg100.txt",
-        re.compile(r"VENUS AND ADONIS"),
-        re.compile(r"\*\*\* END OF THE PROJECT GUTENBERG"),
+        "VENUS AND ADONIS",
+        END_OF_GUTENBERG,
     ),
     "edgar_allen_poe": (
         "https://www.gutenberg.org/cache/epub/10031/pg10031.txt",
-        re.compile(r"THE RAVEN."),
-        re.compile(r"\*\*\* END OF THE PROJECT GUTENBERG"),
+        "THE RAVEN.",
+        END_OF_GUTENBERG,
     ),
     "thomas_paine": (
         "https://www.gutenberg.org/cache/epub/31270/pg31270.txt",
-        re.compile(r"THE CRISIS"),
-        re.compile(r"\*\*\* END OF THE PROJECT GUTENBERG"),
+        "THE CRISIS",
+        END_OF_GUTENBERG,
     ),
     "winston_churchill": (
         "https://www.gutenberg.org/cache/epub/5400/pg5400.txt",
-        re.compile(r"CHAPTER I"),
-        re.compile(r"\*\*\* END OF THE PROJECT GUTENBERG"),
+        "CHAPTER I",
+        END_OF_GUTENBERG,
+    ),
+    "the_odyssey": (
+        "https://www.gutenberg.org/cache/epub/1727/pg1727.txt",
+        "TELEMACHUS TO THE SUITORS.",
+        "[1] [ Black races are evidently known to the",
     ),
 }

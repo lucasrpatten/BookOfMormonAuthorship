@@ -165,7 +165,7 @@ cython_debug/
 */database/
 test_ds.pkl
 train_ds.pkl
-*/bom/*
+*/bom/
 
 
 .vscode/

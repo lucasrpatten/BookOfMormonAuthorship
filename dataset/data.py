@@ -55,7 +55,7 @@ class AuthorshipPairDataset(Dataset):
         return inputs1, inputs2, label
 
 
-def download_file(name: str, url: str, start: re.Pattern, end: re.Pattern):
+def download_file(name: str, url: str, start: str, end: str):
     """Downloads a file and adds it to the database
 
     Args:
@@ -73,8 +73,8 @@ def download_file(name: str, url: str, start: re.Pattern, end: re.Pattern):
             f"Failed to download file from {url} with status code {response.status_code}"
         )
     text = response.content.decode("utf-8")
-    text = re.split(start, text, 1)[1]
-    text = re.split(end, text, 1)[0]
+    text = text.split(start, maxsplit=1)[1]
+    text = text.split(end, maxsplit=1)[0]
     text = text.strip()
     script_dir = os.path.dirname(os.path.abspath(__file__))
     database_path = os.path.join(script_dir, "database")
@@ -87,7 +87,7 @@ def download_file(name: str, url: str, start: re.Pattern, end: re.Pattern):
 
 # pylint: disable=too-many-locals
 def generate_dataset(
-    size: int = 10000, train_split: float = 0.8, seed: int = 42
+    size: int = 1000, train_split: float = 0.8, seed: int = 42
 ) -> tuple[Dataset, Dataset]:
     """Generates dataset pairs for AI
 
@@ -115,44 +115,32 @@ def generate_dataset(
             # open random file
             with open(random.choice(files), "r", encoding="utf-8") as f:
                 space_split = f.read().split()
-            split_start_1 = random.randint(0, len(space_split) - 4096)
-            text1_len = random.randint(480, 4090)
+            split_start_1 = random.randint(0, len(space_split) - 512)
+            text1_len = random.randint(20, 500)
             text1 = " ".join(space_split[split_start_1 : split_start_1 + text1_len])
-            split_start_2 = random.randint(0, len(space_split) - 4096)
-            text2_len = random.randint(480, 4090)
+            split_start_2 = random.randint(0, len(space_split) - 512)
+            text2_len = random.randint(20, 500)
             text2 = " ".join(space_split[split_start_2 : split_start_2 + text2_len])
             return text1, text2, 1
         file1, file2 = random.sample(files, 2)
         with open(file1, "r", encoding="utf-8") as f:
             space_split1 = f.read().split()
-        split_start_1 = random.randint(0, len(space_split1) - 4096)
-        text1_len = random.randint(480, 4090)
+
+        split_start_1 = random.randint(0, len(space_split1) - 512)
+        text1_len = random.randint(20, 500)
         text1 = " ".join(space_split1[split_start_1 : split_start_1 + text1_len])
         with open(file2, "r", encoding="utf-8") as f:
             space_split2 = f.read().split()
-        split_start_2 = random.randint(0, len(space_split2) - 4096)
-        text2_len = random.randint(480, 4090)
+        split_start_2 = random.randint(0, len(space_split2) - 512)
+        text2_len = random.randint(20, 500)
         text2 = " ".join(space_split2[split_start_2 : split_start_2 + text2_len])
         return text1, text2, 0
 
     pairs = [__generate_pair() for _ in range(size)]
     text_data1, text_data2, labels = zip(*pairs)
 
-    # text_data1 = []
-    # text_data2 = []
-    # labels = []
 
-    # for _ in range(size):
-    #     text1, text2, label = __generate_pair()
-    #     text_data1.append(text1)
-    #     text_data2.append(text2)
-    #     labels.append(label)
-
-    ds = AuthorshipPairDataset(
-        text_data1,
-        text_data2,
-        labels
-    )
+    ds = AuthorshipPairDataset(text_data1, text_data2, labels)
     train_size = int(train_split * len(ds))
     test_size = len(ds) - train_size
 

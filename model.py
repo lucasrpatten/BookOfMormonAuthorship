@@ -7,7 +7,7 @@ class SiameseAuthorshipModel(nn.Module):
     def __init__(
         self,
         similarity_threshold: float = 3.0,
-        roberta_model: str = "roberta-large-mnli",
+        roberta_model: str = "roberta-large",
     ):
         super().__init__()
         self.roberta = RobertaModel.from_pretrained(roberta_model)
@@ -32,3 +32,11 @@ class SiameseAuthorshipModel(nn.Module):
         output2 = self.fc(output2)
         cosine_similarity = nn.functional.cosine_similarity(output1, output2, dim=1)
         return cosine_similarity
+
+class SiameseAuthorshipNoTraining(SiameseAuthorshipModel):
+    def __init__(self, similarity_threshold: float = 3, roberta_model: str = "roberta-large-mnli"):
+        super().__init__(similarity_threshold, roberta_model)
+        self.fc.apply(self.init_weights)
+    def init_weights(self, layer):
+        if isinstance(layer, nn.Linear):
+            nn.init.ones_(layer.weight.data)
