@@ -34,7 +34,7 @@ def parse_chapter(chapter_text: str):
     ]
 
 
-def parse_book(book_text: str, book_name: str, single: bool = False):
+def parse_book(book_text: str, book_name: str, single: bool = False, include_intro: bool = True):
     book_dir = os.path.join(database_path, book_name)
     if not os.path.exists(book_dir):
         os.makedirs(book_dir)
@@ -51,12 +51,15 @@ def parse_book(book_text: str, book_name: str, single: bool = False):
             with open(verse_path, "w", encoding="utf-8") as f:
                 f.write(verse.strip().replace("\r", " "))
         return
+
     chapters = re.split(f"{book_name} Chapter \d+", book_text)
     if chapters[0].strip() != "":
-        intro = chapters[0]
-        intro_path = os.path.join(book_dir, "intro.txt")
-        with open(intro_path, "w", encoding="utf-8") as f:
-            f.write(re.sub(r"\r\n", " ", intro.strip()))
+        if include_intro:
+            intro = chapters[0]
+            intro_path = os.path.join(book_dir, "intro.txt")
+            with open(intro_path, "w", encoding="utf-8") as f:
+                f.write(re.sub(r"\r\n", " ", intro.strip()))
+
     chapters = chapters[1:]
     for i, chapter in enumerate(chapters):
         chapter_dir = os.path.join(book_dir, str(i + 1))
@@ -103,32 +106,23 @@ def parse_books(bom_text: str):
 
     del bom_text
 
-    parse_book(nephi1, "1 Nephi")
-    parse_book(nephi2, "2 Nephi")
-    parse_book(jacob, "Jacob")
-    parse_book(enos, "Enos", single=True)
-    parse_book(jarom, "Jarom", single=True)
-    parse_book(omni, "Omni", single=True)
-    parse_book(words_of_mormon, "Words of Mormon", single=True)
-    parse_book(mosiah, "Mosiah")
-    parse_book(alma, "Alma")
-    parse_book(heleman, "Heleman")
-    parse_book(nephi3, "3 Nephi")
-    parse_book(nephi4, "4 Nephi", single=True)
-    parse_book(mormon, "Mormon")
-    parse_book(ether, "Ether")
-    parse_book(moroni, "Moroni")
+    intro_include = False
+
+    parse_book(nephi1, "1 Nephi", include_intro=intro_include)
+    parse_book(nephi2, "2 Nephi", include_intro=intro_include)
+    parse_book(jacob, "Jacob", include_intro=intro_include)
+    parse_book(enos, "Enos", single=True, include_intro=intro_include)
+    parse_book(jarom, "Jarom", single=True, include_intro=intro_include)
+    parse_book(omni, "Omni", single=True, include_intro=intro_include)
+    parse_book(words_of_mormon, "Words of Mormon", single=True, include_intro=intro_include)
+    parse_book(mosiah, "Mosiah", include_intro=intro_include)
+    parse_book(alma, "Alma", include_intro=intro_include)
+    parse_book(heleman, "Heleman", include_intro=intro_include)
+    parse_book(nephi3, "3 Nephi", include_intro=intro_include)
+    parse_book(nephi4, "4 Nephi", single=True, include_intro=intro_include)
+    parse_book(mormon, "Mormon", include_intro=intro_include)
+    parse_book(ether, "Ether", include_intro=intro_include)
+    parse_book(moroni, "Moroni", include_intro=intro_include)
 
 
 parse_books(fetch_bom())
-
-
-# # Perform the split
-# segments = split_regex.split(text)
-
-# # Create a dictionary from the segments
-# result_dict = {}
-# for i in range(1, len(segments), 2):
-#     key = segments[i - 1].strip()
-#     value = segments[i].strip()
-#     result_dict[key] = value
