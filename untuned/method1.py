@@ -7,6 +7,7 @@ from typing import TypedDict, Union
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import ast
 
 
 class Statistics(TypedDict):
@@ -53,8 +54,20 @@ def get_statistics(data: pd.Series, outlier_threshold: float = 1.5) -> Statistic
 
     return {key: stats[key] for key in Statistics.__annotations__}  # type: ignore # return in correct order
 
-def segment(stats: Statistics):
-    
+def segment(stats: Statistics, df: pd.DataFrame):
+    authors_df = pd.DataFrame(columns=["start_verse_num", "end_verse_num", "start_verse", "end_verse", "avg_embedding"])
+    split_indices = stats["lower_outliers"].index
+    prev_indice = 0
+    for index, i in enumerate(split_indices):
+        author = df.loc[prev_indice:i]
+        embeddings = np.array([list(map(float, x.lstrip("[").rstrip("]").split())) for x in author["embedding"].to_list()])
+        author_embedding = embeddings.mean(axis=1)
+        author_start = author.to_numpy()[0]
+        print(author_start)
+        author_end = author.to_numpy()[-1]
+        authors_df.loc[index] = [prev_indice, i, f"{author_start[1]} {author_start[2]} {author_start[3]}", f"{author_end[1]} {author_end[2]}.{author_end[3]}", author_embedding]
+        prev_indice = i
+    return authors_df
 
 def box_and_whisker(stats: Statistics) -> None:
     outliers = stats["outliers"]
@@ -103,5 +116,6 @@ def line_graph(stats: Statistics):
 
 df = pd.read_csv("embeddings.csv")
 cos_sim = df["cos_sim"].dropna()
-stats = get_statistics(cos_sim, 3.5)
-line_graph(stats)
+stats = get_statistics(cos_sim, 2)
+segmented = segment(stats, df)
+segmented.to_csv("method1_segments.csv")
