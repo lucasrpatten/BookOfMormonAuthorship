@@ -32,8 +32,8 @@ class AuthorshipPairDataset(Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx: int):
-        tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
-        max_length = 512
+        tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
+        max_length = 170
         text1 = self.text_data1[idx]
         text2 = self.text_data2[idx]
         inputs1 = tokenizer(
@@ -75,7 +75,7 @@ def download_file(name: str, url: str, start: str, end: str):
     text = response.content.decode("utf-8")
     text = text.split(start, maxsplit=1)[1]
     text = text.split(end, maxsplit=1)[0]
-    text = text.strip()
+    text = text.strip().replace("\r", "")
     script_dir = os.path.dirname(os.path.abspath(__file__))
     database_path = os.path.join(script_dir, "database")
     if not os.path.exists(database_path):
@@ -115,24 +115,24 @@ def generate_dataset(
             # open random file
             with open(random.choice(files), "r", encoding="utf-8") as f:
                 space_split = f.read().split()
-            split_start_1 = random.randint(0, len(space_split) - 512)
-            text1_len = random.randint(20, 500)
+            split_start_1 = random.randint(0, len(space_split) - 200)
+            text1_len = random.randint(20, 170)
             text1 = " ".join(space_split[split_start_1 : split_start_1 + text1_len])
-            split_start_2 = random.randint(0, len(space_split) - 512)
-            text2_len = random.randint(20, 500)
+            split_start_2 = random.randint(0, len(space_split) - 200)
+            text2_len = random.randint(20, 170)
             text2 = " ".join(space_split[split_start_2 : split_start_2 + text2_len])
             return text1, text2, 1
         file1, file2 = random.sample(files, 2)
         with open(file1, "r", encoding="utf-8") as f:
             space_split1 = f.read().split()
 
-        split_start_1 = random.randint(0, len(space_split1) - 512)
-        text1_len = random.randint(20, 500)
+        split_start_1 = random.randint(0, len(space_split1) - 200)
+        text1_len = random.randint(20, 170)
         text1 = " ".join(space_split1[split_start_1 : split_start_1 + text1_len])
         with open(file2, "r", encoding="utf-8") as f:
             space_split2 = f.read().split()
-        split_start_2 = random.randint(0, len(space_split2) - 512)
-        text2_len = random.randint(20, 500)
+        split_start_2 = random.randint(0, len(space_split2) - 200)
+        text2_len = random.randint(20, 170)
         text2 = " ".join(space_split2[split_start_2 : split_start_2 + text2_len])
         return text1, text2, 0
 

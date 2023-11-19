@@ -28,4 +28,19 @@ downloads: dict[str, tuple[str, str, str]] = {
         "TELEMACHUS TO THE SUITORS.",
         "[1] [ Black races are evidently known to the",
     ),
+    "through_england_on_a_side_saddle": (
+        "https://gutenberg.org/cache/epub/72156/pg72156.txt",
+        "TO THE READER.",
+        "FINIS."
+    ),
+    "travels_through_southern_abyssinia": (
+        "https://gutenberg.org/cache/epub/72155/pg72155.txt",
+        "TRAVELS IN SOUTHERN ABYSSINIA, ETC.",
+        "END OF VOL. I.END OF VOL. I."
+    ),
+    "fashions_old_new_england": (
+        "https://gutenberg.org/cache/epub/24159/pg24159.txt",
+        "From the hour when the Puritan baby opened his eyes in bleak New England",
+        END_OF_GUTENBERG
+    )
 }

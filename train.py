@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from transformers import RobertaTokenizer
 from sklearn.metrics import accuracy_score
 
 from dataset.data import get_data
@@ -11,20 +10,17 @@ from dataset.data import get_data
 from model import SiameseAuthorshipModel
 
 torch.set_grad_enabled(True)
-
-roberta_tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
-
-train_ds, test_ds = get_data(100, 0.9)
+train_ds, test_ds = get_data(10000, 0.8)
 train_loader = DataLoader(train_ds, batch_size=4, shuffle=True)
 val_loader = DataLoader(test_ds, batch_size=4)
 
 model = SiameseAuthorshipModel(roberta_model="roberta-base", similarity_threshold=3.0)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.01)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
-num_epochs = 10
+num_epochs = 5
 checkpoint_interval = 1
 save_dir = "checkpoints"
 os.makedirs(save_dir, exist_ok=True)
@@ -40,13 +36,14 @@ for epoch in range(num_epochs):
         labels = torch.Tensor(labels)
         # Forward Pass
         output1 = model(texts1, texts2)
-        loss = criterion(output1, labels.float())
+        loss = criterion(output1 * 100, labels.float() * 100)
 
         # Backpropogation
         loss.backward()
         optimizer.step()
 
         total_loss += loss.item()
+        print(batch_idx, total_loss / ((batch_idx + 1) * 4))
 
     avg_train_loss = total_loss / len(train_ds)  # type: ignore
     print(f"Epoch {epoch+1}, Training Loss: {avg_train_loss}")
@@ -64,7 +61,7 @@ for epoch in range(num_epochs):
             val_labels.extend(val_true_labels)
 
     val_accuracy = accuracy_score(
-        val_labels, [1 if pred >= 0.5 else 0 for pred in val_preds]
+        val_labels, [1 if pred >= 0.75 else 0 for pred in val_preds]
     )
     print(f"Validation Accuracy: {val_accuracy}")
     if (epoch + 1) % checkpoint_interval == 0:
