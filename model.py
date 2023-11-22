@@ -1,13 +1,10 @@
-from abc import ABC, abstractmethod
-import torch
 import torch.nn as nn
 from transformers import RobertaModel
 
 class SiameseAuthorshipModel(nn.Module):
     def __init__(
         self,
-        similarity_threshold: float = 3.0,
-        roberta_model: str = "roberta-large",
+        roberta_model: str = "roberta-base",
     ):
         super().__init__()
         self.roberta = RobertaModel.from_pretrained(roberta_model)
@@ -19,7 +16,6 @@ class SiameseAuthorshipModel(nn.Module):
             nn.Linear(128, 64)
         )
         self.relu = nn.ReLU()
-        self.similarity_threshold = similarity_threshold
 
     def forward(self, inputs1, inputs2):
         input1_ids = inputs1["input_ids"].squeeze(1)
